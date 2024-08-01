@@ -2,11 +2,10 @@ project(simulator VERSION 0.1.0 LANGUAGES C CXX)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/exe)
 
-add_library(helloworld_library STATIC src/helloworld.cpp)
+add_library(house STATIC src/house.cpp)
 
-target_include_directories(helloworld_library
-    PUBLIC 
-    ${PROJECT_SOURCE_DIR}/include
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include,
+    ${PROJECT_NAME} PRIVATE ${COMMON_DIR}
 )
 
 add_executable(${PROJECT_NAME} 
@@ -15,5 +14,5 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME} 
     PRIVATE 
-    helloworld_library
+    house
 )
