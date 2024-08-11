@@ -1,6 +1,12 @@
 #include "simulator_data.h"
 
 SimulatorData::SimulatorData(House& house) : house(house) {
+    reset();
+}
+
+void SimulatorData::reset() {
+    dirt_map.clear();
+    dirt_count = 0;
     vacuum_cleaner_coor = house.getDockingStation();
     vacuum_cleaner_battery = house.getMaxBatterySteps();
     registerDirtData();

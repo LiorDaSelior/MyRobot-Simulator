@@ -22,6 +22,7 @@ void MySimulator::setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algor
 
 void MySimulator::run() {
     Step curr_step;
+    simulator_data.reset();
     while (step_count <= simulator_data.getMaxMissionSteps() && (!is_finished) && !(curr_step == Step::Finish && simulator_data.isVacuumAtDocking())) {
         curr_step = (*algorithm).nextStep();
 

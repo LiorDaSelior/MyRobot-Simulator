@@ -27,6 +27,7 @@ class SimulatorData {
     void registerDirtData();
     int getDirtLevel(std::pair<int, int> coor);
     bool cleanDirt(std::pair<int, int> coor);
+    void reset();
 
     size_t getMaxMissionSteps() {
         return house.getMaxMissionSteps();

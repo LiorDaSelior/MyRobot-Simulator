@@ -1,3 +1,6 @@
+#ifndef MAP_UTILITY_H
+#define MAP_UTILITY_H
+
 #include <utility>
 
 struct IntegerPairComparator {
@@ -18,3 +21,5 @@ struct PairHasher {
         return h1 ^ h2; 
     }
 };
+
+#endif

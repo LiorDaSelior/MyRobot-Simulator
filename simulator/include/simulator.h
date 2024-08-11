@@ -8,6 +8,7 @@
 #include "battery_meter.h"
 #include "dirt_sensor.h"
 #include "wall_sensor.h"
+#include "simulator_data.h"
 #include <memory>
 
 class MySimulator {
