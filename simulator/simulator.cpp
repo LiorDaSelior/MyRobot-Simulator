@@ -6,6 +6,7 @@
 #include "my_wall_sensor.h"
 
 MySimulator::MySimulator(House& house) : simulator_data(house){
+    filename = house.getHouseFilename();
     wall_sensor = std::make_unique<MyWallsSensor>(simulator_data);
     dirt_sensor = std::make_unique<MyDirtSensor>(simulator_data);
     battery_meter = std::make_unique<MyBatteryMeter>(simulator_data);
@@ -41,16 +42,17 @@ void MySimulator::run() {
         else
             is_finished = true;
     }
-    output();
 }
 
-void MySimulator::output() {
-    std::string output_file_name = file_name;
-    output_file_name.insert(0, "output_");
+void MySimulator::output(const std::string& algorithm_name) {
+    std::string output_filename = ".txt";
+    output_filename.insert(0, algorithm_name);
+    output_filename.insert(0, "-");
+    output_filename.insert(0, filename);
 
-    std::ofstream output_file(output_file_name);
+    std::ofstream output_file(output_filename);
     if (!output_file) {
-        std::cerr << "Error opening file: " << output_file_name << std::endl;
+        std::cerr << "Error opening file: " << output_filename << std::endl;
         return;
     }
 

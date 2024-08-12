@@ -91,6 +91,13 @@ std::string House::trim(const std::string& str) {
 }
 
 void House::parseInputFile(const std::string& filename) {
+    int index = filename.find_last_of('/');
+    if (index == static_cast<int>(filename.npos))
+        house_filename = filename;
+    else
+        house_filename = filename.substr(filename.find_last_of('/') + 1);
+    house_filename = house_filename.substr(0,house_filename.find_last_of('.'));
+
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open input file.");

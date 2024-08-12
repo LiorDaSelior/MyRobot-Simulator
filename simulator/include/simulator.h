@@ -20,10 +20,11 @@ public:
 
     MySimulator(House& house);
     void setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algorithm_pnt);
+    void output(const std::string& algorithm_name);
     void run();
 
 private:
-    std::string file_name;
+    std::string filename;
     SimulatorData simulator_data;
     std::unique_ptr<WallsSensor> wall_sensor;
     std::unique_ptr<DirtSensor> dirt_sensor;
@@ -35,7 +36,6 @@ private:
     // TODO:
     // count and return score in run
     // optional output
-    void output();
 };
 
 #endif

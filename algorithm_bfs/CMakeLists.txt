@@ -1,4 +1,4 @@
-project(algorithm VERSION 0.1.0 LANGUAGES C CXX)
+project(algorithm_bfs VERSION 0.1.0 LANGUAGES C CXX)
 
 set (LIBRARY_OUTPUT_DIRECTORY $)
 

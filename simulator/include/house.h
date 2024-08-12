@@ -12,8 +12,12 @@ class House {
 public:
     House() = default;
     House(const std::string& filename);
+    std::string getHouseFilename() {
+        return house_filename;
+    }
 
 private:
+    std::string house_filename;
     std::vector<std::vector<int>> houseMap;
     std::vector<std::string> new_grid;
     std::pair<int, int> dockingStation;
