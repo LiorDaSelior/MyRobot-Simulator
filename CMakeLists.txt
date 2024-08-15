@@ -8,7 +8,7 @@ set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 add_subdirectory(myrobot)
 add_subdirectory(Algo_123456789)
 add_subdirectory(Algo_319125134)
-add_subdirectory(Algo_319125134_1)
+#add_subdirectory(Algo_319125134_1)
 
 include(CTest)
 enable_testing()
