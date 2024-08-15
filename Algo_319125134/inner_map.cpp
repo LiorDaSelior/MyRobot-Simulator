@@ -4,14 +4,14 @@
 
 
 
-void MyAlgorithm::InnerMap::resetBfsStatus() {
+void Algo_319125134::InnerMap::resetBfsStatus() {
     for (auto& [key,value] : graph_map) {
         value.setBfsStatus(false);
     }
 }
 
 // assumption : src_coor is visited and not dirty - if returned value is src_coor -> none found (that's how the algo works)
-void MyAlgorithm::InnerMap::bfsAlgorithm(std::pair<int, int> src_coor) { 
+void Algo_319125134::InnerMap::bfsAlgorithm(std::pair<int, int> src_coor) { 
     closet_visited_and_dirty_flag = false;
     closet_unvisited_flag = false;
 
@@ -52,7 +52,7 @@ void MyAlgorithm::InnerMap::bfsAlgorithm(std::pair<int, int> src_coor) {
 }
 
 // assumption : both src_coor and dst_coor both are in InnerMap, and are different
-Direction MyAlgorithm::InnerMap::getDirection(std::pair<int, int> src_coor, std::pair<int, int> dst_coor) {
+Direction Algo_319125134::InnerMap::getDirection(std::pair<int, int> src_coor, std::pair<int, int> dst_coor) {
     std::pair<int, int> parent_coor;
     Direction parent_direction;
     std::pair<int, int> curr_coor = dst_coor;
@@ -64,7 +64,7 @@ Direction MyAlgorithm::InnerMap::getDirection(std::pair<int, int> src_coor, std:
     return getOppositeDirection(parent_direction);
 }
 
-void MyAlgorithm::InnerMap::print() {
+void Algo_319125134::InnerMap::print() {
     for (auto &&[key, value] : graph_map)
     {
         std::cout << "Coordinates: ("<< key.first << ", " << key.second << "):" << std::endl;

@@ -15,21 +15,23 @@ class SimulatorData {
     private:
     House& house;
     std::pair<int, int> vacuum_cleaner_coor;
-    std::size_t vacuum_cleaner_battery;
+    double vacuum_cleaner_max_battery; // needed cause of double
+    double vacuum_cleaner_battery;
+    double current_charge;
     std::unordered_map<std::pair<int, int>, int, PairHasher, IntegerPairComparator> dirt_map;
     int dirt_count;
 
     SimulatorData(House& house);
     std::pair<int, int> static getAdvancedCoorByDirectionInHouse(std::pair<int, int> coor, Direction dir);
     bool applyStep(Step s);
-    void charge();
+    bool charge();
     void moveVacuum(Direction d);
     void registerDirtData();
     int getDirtLevel(std::pair<int, int> coor);
     bool cleanDirt(std::pair<int, int> coor);
     void reset();
 
-    size_t getMaxMissionSteps() {
+    size_t getMaxMissionSteps() { // used by simulator
         return house.getMaxMissionSteps();
     }
 
@@ -44,7 +46,7 @@ class SimulatorData {
     public:
     
     std::size_t batteryMeterQuery() {
-        return vacuum_cleaner_battery;
+        return static_cast<size_t>(vacuum_cleaner_battery);
     }
 
     int dirtSensorQuery() {

@@ -22,6 +22,7 @@ void MySimulator::setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algor
 }
 
 void MySimulator::run() {
+    printf("SIMULATION START\n");
     Step curr_step;
     simulator_data.reset();
     while (step_count <= simulator_data.getMaxMissionSteps() && (!is_finished) && !(curr_step == Step::Finish && simulator_data.isVacuumAtDocking())) {
@@ -36,12 +37,15 @@ void MySimulator::run() {
         }
 
         step_list.push_back(curr_step);
-        simulator_data.applyStep(curr_step);
+        if (!simulator_data.applyStep(curr_step)) {
+            //printf("WARNING: STEP DOES NOTHING\n");
+        }
         if (curr_step != Step::Finish)
             step_count++;
         else
             is_finished = true;
     }
+    printf("SIMULATION END\n");
 }
 
 void MySimulator::output(const std::string& algorithm_name) {
@@ -58,14 +62,14 @@ void MySimulator::output(const std::string& algorithm_name) {
 
     std::string status;
     if (simulator_data.batteryMeterQuery() <= 0) {
-        if (!simulator_data.isVacuumAtDocking()) {
-            status = "DEAD";
-        }
-        else {
+        if (simulator_data.isVacuumAtDocking()) {
             if (is_finished)
                 status = "FINISHED";
             else
                 status = "WORKING";
+        }
+        else {
+            status = "DEAD";
         }
     }
     else {

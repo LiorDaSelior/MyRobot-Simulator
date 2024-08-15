@@ -18,17 +18,21 @@ int main(int argc, char const *argv[])
     std::vector<void*> handle_vector;
     std::vector<House> house_vector;
 
-    for (const auto & algo_entry : std::filesystem::directory_iterator(algo_path)) {
-        void* handle = dlopen(algo_entry.path().string().c_str(), RTLD_LAZY);
-        if (!handle) {
-            std::cerr << "Error loading library: " << dlerror() << std::endl;
-            return 1;
+    for (const auto & dirent : std::filesystem::directory_iterator(algo_path)) {
+        if (dirent.path().extension() == ".so") {
+            void* handle = dlopen(dirent.path().c_str(), RTLD_LAZY);
+            if (handle == nullptr) {
+                std::cerr << "Error loading library: " << dlerror() << std::endl;
+                return 1;
+            }
+            handle_vector.push_back(handle);
         }
-        handle_vector.push_back(handle);
     }
 
-    for (const auto & house_entry : std::filesystem::directory_iterator(house_path)) {
-        house_vector.emplace_back(house_entry.path().string()); //TODO add error handling
+    for (const auto & dirent : std::filesystem::directory_iterator(house_path)) {
+        if (dirent.path().extension() == ".house") {
+            house_vector.emplace_back(dirent.path().string()); //TODO add error handling
+        }
     }
     
     for (auto& house : house_vector)

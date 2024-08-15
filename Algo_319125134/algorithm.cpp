@@ -1,7 +1,6 @@
 #include "algorithm.h"
 #include "AlgorithmRegistration.h"
 
-REGISTER_ALGORITHM(AnotherAlgorithm);
 
 Direction getOppositeDirection(Direction dir) {
     switch (dir)
@@ -40,7 +39,7 @@ std::pair<int, int> getAdvancedCoorByDirection(std::pair<int, int> coor, Directi
     return std::pair<int, int>(coor.first + i, coor.second + j);
 }
 
-void AnotherAlgorithm::visitCurrentLocation() {
+void Algo_319125134::visitCurrentLocation() {
     if (isCurrentLocationVisited())
         return;
 
@@ -61,14 +60,14 @@ void AnotherAlgorithm::visitCurrentLocation() {
     }
 }
 
-bool AnotherAlgorithm::checkCurrentLocationDirt() {
+bool Algo_319125134::checkCurrentLocationDirt() {
     if ((dirt_sensor_ptr -> dirtLevel()) > 0)
         return true;
     house_map.removeCoorDirt(curr_coor);
     return false;
 }
 
-Step AnotherAlgorithm::moveToClosestDirtyLocation() {
+Step Algo_319125134::moveToClosestDirtyLocation() {
     std::pair<int, int> dst_coor;
     dst_coor = house_map.getClosestDirty(curr_coor);
     if (dst_coor != curr_coor)
@@ -76,7 +75,7 @@ Step AnotherAlgorithm::moveToClosestDirtyLocation() {
     return Step::Stay;
 }
 
-Step AnotherAlgorithm::moveToClosestUnvisitedLocation() {
+Step Algo_319125134::moveToClosestUnvisitedLocation() {
     std::pair<int, int> dst_coor;
     dst_coor = house_map.getClosestUnvisited(curr_coor);
     if (dst_coor != curr_coor)
@@ -84,16 +83,16 @@ Step AnotherAlgorithm::moveToClosestUnvisitedLocation() {
     return Step::Stay;
 }
 
-bool AnotherAlgorithm::checkIfNeedToReturn(Step planned_step) {
+bool Algo_319125134::checkIfNeedToReturn(Step planned_step) {
     if (planned_step == Step::Finish) {
         return true;
     }
     size_t current_battery = battery_meter_ptr->getBatteryState();
     size_t distance_to_docking_station = house_map.getDistance(std::pair<int, int>(0,0));
-    if (distance_to_docking_station == max_steps - curr_steps || distance_to_docking_station == ( (current_battery == 0) ? 0 : current_battery - 1 ))
+    if (distance_to_docking_station == max_steps - curr_steps || distance_to_docking_station == current_battery)
         return true;
     if (planned_step != Step::Stay) {
-        if (distance_to_docking_station == ( (current_battery <= 1) ? 0 : current_battery - 2 ))
+        if (distance_to_docking_station == ( (current_battery == 0) ? 0 : current_battery - 1 ))
             return true;
         if (distance_to_docking_station + 1 == max_steps - curr_steps)
             return true;
@@ -101,7 +100,7 @@ bool AnotherAlgorithm::checkIfNeedToReturn(Step planned_step) {
     return false;
 }
 
-Step AnotherAlgorithm::nextStep() {
+Step Algo_319125134::nextStep() {
     Step next_step;
     Step temp_step;
     bool decided = false;
@@ -111,10 +110,12 @@ Step AnotherAlgorithm::nextStep() {
     }
     visitCurrentLocation(); // enter unvisited locating and its neighbors into the data structure
 
-    if (!(is_finished) && curr_coor == std::pair<int, int>(0,0) && max_battery > battery_meter_ptr->getBatteryState() && curr_steps + 1 < max_steps) { //check if need to charge - before BFS
+    if (!(is_finished) && is_returning && curr_coor == std::pair<int, int>(0,0) && max_battery > battery_meter_ptr->getBatteryState() && curr_steps + 1 < max_steps) { //check if need to charge - before BFS
         curr_steps++;
         return Step::Stay;
     }
+
+    is_returning = false;
 
     house_map.bfs(curr_coor);
 
@@ -141,15 +142,17 @@ Step AnotherAlgorithm::nextStep() {
     if (curr_coor == std::pair<int, int>(0,0) && next_step == Step::Finish) // if finished and already on dock
         return Step::Finish;
 
-    if (checkIfNeedToReturn(next_step)) { // depending on planned step, we need to evaluate if we have enough steps to return to dock with battery = 1 or before steps limit
-        if (std::pair<int, int>(0,0) == curr_coor) {
+    if (checkIfNeedToReturn(next_step)) { // depending on planned step, we need to evaluate if we have enough steps to return to dock with battery = 0 or before steps limit
+        is_returning = true;
+        if (std::pair<int, int>(0,0) == curr_coor) { // we are at dock, lets decide to charge or finish
             if (curr_steps + 1 >= max_steps)
                 next_step = Step::Finish;
             else
                 next_step = Step::Stay;
         }
-        else
+        else {
             next_step = (Step)house_map.getDirection(curr_coor, std::pair<int, int>(0,0));
+        }
     }
 
     if (next_step != Step::Finish && next_step != Step::Stay) // depending on planned step, advance current coordinates
@@ -157,4 +160,8 @@ Step AnotherAlgorithm::nextStep() {
 
     curr_steps++;
     return next_step;
+}
+
+extern "C" {
+    REGISTER_ALGORITHM(Algo_319125134);
 }

@@ -4,15 +4,15 @@
 #include "abstract_algorithm.h"
 #include <vector>
 #include <unordered_map>
-#include "map_utility.h"
 #include "enums.h"
+#include "map_utility.h"
 #include <iostream>
 
 Direction getOppositeDirection(Direction dir);
 
 std::pair<int, int> getAdvancedCoorByDirection(std::pair<int, int> coor, Direction dir);
 
-class AnotherAlgorithm : public AbstractAlgorithm {
+class Algo_319125134 : public AbstractAlgorithm {
 private:
 
     class InnerMap {
@@ -148,6 +148,7 @@ private:
     std::size_t max_steps = 0;
     std::size_t curr_steps = 0;
     bool is_finished = false;
+    bool is_returning = false;
 
     const WallsSensor *wall_sensor_ptr = nullptr;
     const DirtSensor *dirt_sensor_ptr = nullptr;
