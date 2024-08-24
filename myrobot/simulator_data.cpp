@@ -47,7 +47,6 @@ bool SimulatorData::cleanDirt(std::pair<int, int> coor) {
 }
 
 bool SimulatorData::applyStep(Step s) { // false => step is useless, something is wrong in algorithm
-
     switch (s)
     {
     case Step::Finish:
@@ -78,11 +77,11 @@ bool SimulatorData::charge() { //TODO how to raise battery
     if (vacuum_cleaner_battery >= vacuum_cleaner_max_battery) {
         return false;
     }
-    //std::cout << "current charge: " << current_charge << "\n";
-    //std::cout << "prev battery: " << vacuum_cleaner_battery  << "\n";
+    //std::cout << "decided to charge: " << std::fixed << current_charge << "\n";
+    //std::cout << "prev battery: " <<  std::fixed << vacuum_cleaner_battery  << "\n";
     vacuum_cleaner_battery += current_charge;
     vacuum_cleaner_battery = std::min(vacuum_cleaner_battery, vacuum_cleaner_max_battery);
-    //std::cout << "new battery: " << vacuum_cleaner_battery  << "\n";
+    //std::cout << "new battery: " << std::fixed << vacuum_cleaner_battery  << "\n";
     return true;
 }
 

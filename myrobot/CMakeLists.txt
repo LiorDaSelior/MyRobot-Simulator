@@ -6,7 +6,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 #include_directories(include)
 
 #add_library(simulator_library INTERFACE) #INTERFACE - only header files
-add_library(simulator_library house.cpp simulator.cpp simulator_data.cpp my_battery_meter.cpp my_wall_sensor.cpp my_dirt_sensor.cpp)
+add_library(simulator_library house.cpp simulator.cpp simulator_data.cpp my_battery_meter.cpp my_wall_sensor.cpp my_dirt_sensor.cpp simulator_manager.cpp simulator_thread.cpp)
 target_include_directories(simulator_library PUBLIC ${PROJECT_SOURCE_DIR}/include ${COMMON_DIR})
 
 add_executable(${PROJECT_NAME}

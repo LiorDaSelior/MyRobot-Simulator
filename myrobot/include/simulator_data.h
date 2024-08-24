@@ -5,6 +5,7 @@
 #include "enums.h"
 #include "map_utility.h"
 #include <unordered_map>
+#include <cmath>
 
 class MySimulator;
 
@@ -46,7 +47,7 @@ class SimulatorData {
     public:
     
     std::size_t batteryMeterQuery() {
-        return static_cast<size_t>(vacuum_cleaner_battery);
+        return static_cast<size_t>(std::round(vacuum_cleaner_battery * 1'000'000) / 1'000'000);
     }
 
     int dirtSensorQuery() {

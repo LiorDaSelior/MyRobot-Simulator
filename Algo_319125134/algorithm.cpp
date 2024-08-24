@@ -109,7 +109,10 @@ Step Algo_319125134::nextStep() {
         max_battery = battery_meter_ptr->getBatteryState();
     }
     visitCurrentLocation(); // enter unvisited locating and its neighbors into the data structure
-
+    //std::cout << "algorithm max battery:" << std::fixed << max_battery << '\n';
+    //std::cout << "algorithm current battery:" << std::fixed << battery_meter_ptr->getBatteryState() << '\n';
+    //std::cout << "is equal:" << (max_battery > battery_meter_ptr->getBatteryState()) << '\n';
+    
     if (!(is_finished) && is_returning && curr_coor == std::pair<int, int>(0,0) && max_battery > battery_meter_ptr->getBatteryState() && curr_steps + 1 < max_steps) { //check if need to charge - before BFS
         curr_steps++;
         return Step::Stay;
