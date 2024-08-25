@@ -7,6 +7,7 @@
 #include <iostream>
 
 class SimulatorData;
+class SimulatorManager;
 
 class House {
 public:
@@ -26,6 +27,7 @@ private:
     std::size_t maxBatterySteps;
     int rows;
     int cols;
+    int total_dirt;
     
 
     void cleanDirt(int x, int y);
@@ -41,8 +43,12 @@ private:
     void parseInputFile(const std::string& filename);
     void surroundWithWalls();
     std::string trim(const std::string& str);  
+    int getTotalDirt() const {
+        return total_dirt;
+    }
 
 friend SimulatorData;
+friend SimulatorManager;
 };
 
 #endif // HOUSE_H

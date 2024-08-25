@@ -25,6 +25,7 @@ void SimulatorData::registerDirtData() {
             }
         }
     }
+    init_dirt_count = dirt_count;
 }
 
 int SimulatorData::getDirtLevel(std::pair<int, int> coor) {

@@ -16,6 +16,7 @@ House::House(const std::string& filename) {
         std::cerr << "Error in House constructor: " << e.what() << std::endl;
         throw;
     }
+    total_dirt = getTotalRemainingDirt();
 }
 
 void House::cleanDirt(int x, int y) {

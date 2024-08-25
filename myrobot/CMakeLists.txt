@@ -1,8 +1,12 @@
 project(myrobot VERSION 0.1.0 LANGUAGES C CXX)
 
+cmake_policy(SET CMP0167 NEW)
+
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/exe)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 
+find_package(Boost REQUIRED COMPONENTS system)
+include_directories(${Boost_INCLUDE_DIRS})
 #include_directories(include)
 
 #add_library(simulator_library INTERFACE) #INTERFACE - only header files
@@ -20,4 +24,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_DIR})
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC 
     simulator_library
+    ${Boost_LIBRARIES}
 )

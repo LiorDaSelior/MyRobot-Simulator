@@ -21,7 +21,8 @@ class SimulatorData {
     double current_charge;
     std::unordered_map<std::pair<int, int>, int, PairHasher, IntegerPairComparator> dirt_map;
     int dirt_count;
-
+    int init_dirt_count;
+    
     SimulatorData(House& house);
     std::pair<int, int> static getAdvancedCoorByDirectionInHouse(std::pair<int, int> coor, Direction dir);
     bool applyStep(Step s);
@@ -42,6 +43,10 @@ class SimulatorData {
 
     int getTotalDirt() {
         return dirt_count;
+    }
+
+    int getInitTotalDirt() {
+        return init_dirt_count;
     }
 
     public:

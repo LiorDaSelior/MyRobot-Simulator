@@ -11,6 +11,7 @@
 #include "simulator_data.h"
 #include <memory>
 
+
 class MySimulator {
 public:
     MySimulator() = delete;
@@ -22,6 +23,13 @@ public:
     void setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algorithm_pnt);
     void output(const std::string& algorithm_name);
     void run();
+    int calculateScore();
+    size_t getMaxSteps() {
+        return simulator_data.getMaxMissionSteps();
+    }
+    int getInitDirt() {
+        return simulator_data.getInitTotalDirt();
+    }
 
 private:
     std::string filename;
@@ -36,6 +44,8 @@ private:
     // TODO:
     // count and return score in run
     // optional output
+
+    std::string getStatus();
 };
 
 #endif

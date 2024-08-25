@@ -1,8 +1,10 @@
 #include "simulator_manager.h"
+#include <fstream>
 #include <filesystem>
 #include <dlfcn.h>
-#include <thread>
+#include <chrono>
 
+constexpr int TIME_QUANTUM = 1; // ms
 
 SimulatorManager::SimulatorManager(int argc, char const *argv[]) {
     handleArguments(argc, argv);
@@ -28,6 +30,8 @@ SimulatorManager::SimulatorManager(int argc, char const *argv[]) {
     algo_pnt_vector = std::vector<std::unique_ptr<AbstractAlgorithm>>(job_total);
     algo_name_vector = std::vector<std::string>(AlgorithmRegistrar::getAlgorithmRegistrar().count());
 
+    timer_dict.clear();
+
     int current_job_num = 0;
     int current_algo_num = 0;
     for(const auto& algo: AlgorithmRegistrar::getAlgorithmRegistrar()) { // AlgorithmRegistrar acts as algorithm vector
@@ -36,67 +40,45 @@ SimulatorManager::SimulatorManager(int argc, char const *argv[]) {
         for (auto& house : house_vector)
         {
             algo_pnt_vector[current_job_num] = std::move(algo.create());
+            timer_dict.emplace(current_job_num, house.getMaxMissionSteps() * TIME_QUANTUM);
             current_job_num++;
         }
     }
-    //std::cout << "TOTAL: "<< current_job_num << '\n';
-    for (size_t j = 0; j < current_algo_num; j++)
-    {
-        std::cout << "Algo name "<< j << ": " << algo_name_vector[j] << '\n';
-    }
-    for (size_t i = 0; i < current_job_num; i++)
-    {
-        std::cout << "Algo pnt "<< i << ": " << algo_pnt_vector[i] << '\n';
-        
-    }
-    
+    scoreboard = std::vector<int>(job_total);
+    threads = std::vector<std::jthread>();
+    is_thread_stuck_vector = std::vector<bool>(threads_num, false);
 }
 
 void SimulatorManager::run() {
     job_number = 0;
-    //std::vector<SimulatorThread> simulator_jobs;
-    std::vector<std::thread> threads;
+
     for (int i = 0; i < threads_num; i++)
     {
-        //printf("%d\n", i);
-
-        threads.emplace_back([this] () {
-            SimulatorThread sim_thread = SimulatorThread(*this);
+        threads.emplace_back(([this, i] () {
+            SimulatorThread sim_thread = SimulatorThread(*this, i);
             sim_thread.run();
-            });
-    }
-    for (std::thread& t : threads) {
-        if (t.joinable()) {
-            t.join();
-        }
+            })
+        );
     }
     
+    manageJobs();
 
-    // for(const auto& algo: AlgorithmRegistrar::getAlgorithmRegistrar()) { // AlgorithmRegistrar acts as algorithm vector
-    //     MySimulator simulator(house);
-    //     std::unique_ptr<AbstractAlgorithm> algorithm = algo.create();
-    //     simulator.setAlgorithm(std::move(algorithm));
-    //     simulator.run();
-    //     if (!summary_only) {
-    //         simulator.output(algo.name());
-    //     }
-    // }
+    for (int i = 0; i < is_thread_stuck_vector.size(); i++) {
+        std::cout << i  << ": "<< is_thread_stuck_vector[i] << std::endl;
+    }
 
-    // for (auto& house : house_vector)
-    // {
-    //     for(const auto& algo: AlgorithmRegistrar::getAlgorithmRegistrar()) { // AlgorithmRegistrar acts as algorithm vector
-    //         MySimulator simulator(house);
-    //         std::unique_ptr<AbstractAlgorithm> algorithm = algo.create();
-    //         simulator.setAlgorithm(std::move(algorithm));
-    //         simulator.run();
-    //         if (!summary_only) {
-    //             simulator.output(algo.name());
-    //         }
-    //     }
-    // }
+    for (int i = 0; i < threads.size(); i++)
+    {
+        if ((!is_thread_stuck_vector[i]) && threads[i].joinable()) {
+            threads[i].join();
+        }
+    }
+
+    outputCSV();
 }
 
 void SimulatorManager::close() {
+    AlgorithmRegistrar::getAlgorithmRegistrar().clear();
     for (auto& handle : handle_vector) {
         dlclose(handle);
     }
@@ -135,4 +117,79 @@ void SimulatorManager::handleArguments(int argc, char const *argv[]) {
     house_path = parameters["-house_path"];
     algo_path = parameters["-algo_path"];
     threads_num = std::stoi(parameters["-num_threads"]); //TODO error handle
+}
+
+void SimulatorManager::outputCSV() {
+    std::string output_filename = "summary.csv";
+
+    std::ofstream output_file = std::ofstream(output_filename);
+    if (!output_file) {
+        std::cerr << "Error opening file: " << output_filename << std::endl;
+        return;
+    }
+
+    output_file << "algorithms/houses";
+
+    for (int i = 0; i < house_vector.size(); i++)
+    {
+        output_file << ",";
+        output_file << house_vector[i].getHouseFilename();     
+    }
+    output_file << std::endl;
+    for (int i = 0; i < algo_name_vector.size(); i++)
+    {
+        output_file << algo_name_vector[i];
+        for (int j = 0; j < house_vector.size(); j++)
+        {
+            output_file << ",";
+            output_file << scoreboard[i * house_vector.size() + j];
+        }
+        output_file << std::endl;
+    }
+}
+
+void SimulatorManager::manageJobs() {
+    bool isJobLeft = true;
+    while(isJobLeft) {
+        isJobLeft = false;
+        int elapsed;
+        bool is_elapsed;
+        int current_score;
+        for (int i = 0; i < job_total; i++)
+        {
+            is_elapsed = false;
+            timer_dict[i].timerLock();
+            if (!timer_dict[i].isFinished()) {
+                if (timer_dict[i].isStarted()) {
+                    elapsed = duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - timer_dict[i].getStartTime()).count();
+                    if (elapsed >= timer_dict[i].getTotalTime()) {
+                        timer_dict[i].finish();
+                        is_elapsed = true;
+                    }
+                    else
+                        isJobLeft = true;
+                }
+                else
+                    isJobLeft = true;
+            }
+            timer_dict[i].timerUnlock();
+            if (is_elapsed) {
+                printf("elapsed!\n");
+                printf("elapsed on job %d\n", i);
+                printf("thread #%d\n", timer_dict[i].getWorkerIndex());
+                is_thread_stuck_vector[timer_dict[i].getWorkerIndex()] = true; // set thread to stuck
+
+                current_score = house_vector[job_number % house_vector.size()].getMaxMissionSteps() * 2 + 
+                house_vector[job_number % house_vector.size()].getTotalDirt() * 300 + 2000;
+                setScoreboardJobScore(i, current_score); // set scoreboard for failed job
+
+                is_thread_stuck_vector.push_back(false); // add new thread
+                threads.emplace_back(([this] () { 
+                SimulatorThread sim_thread = SimulatorThread(*this, threads.size());
+                sim_thread.run();
+                }));
+            }
+            //(!timer_dict[i].isFinished()) ? (std::cout << i << std::endl) : (std::cout);
+        }
+    }
 }

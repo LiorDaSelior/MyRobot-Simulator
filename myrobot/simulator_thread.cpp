@@ -1,7 +1,7 @@
 #include "simulator_manager.h"
+#include <boost/asio.hpp>
 
-SimulatorManager::SimulatorThread::SimulatorThread(SimulatorManager& simulator_manager) : manager(simulator_manager){
-}
+SimulatorManager::SimulatorThread::SimulatorThread(SimulatorManager& simulator_manager, int index_) : manager(simulator_manager), index(index_) {}
 
 void SimulatorManager::SimulatorThread::setAlgorithmData(int job_number) {
     int current_algo_num = job_number / manager.house_vector.size();
@@ -13,17 +13,38 @@ void SimulatorManager::SimulatorThread::setAlgorithmData(int job_number) {
     //std::cout << "Algo pnt in setAlgorithmData after move: " << current_algo_pnt << " - for job " << job_number << '\n';
 }
 
-void SimulatorManager::SimulatorThread::runJob(int job_number) { 
+bool SimulatorManager::SimulatorThread::runJob(int job_number) { 
+    //auto& current_timer = manager.getJobTimer(job_number);
+    bool is_elapsed = true;
+
     int current_house_num = job_number % manager.house_vector.size();
-    //std::cout << "Job current number: ("<< job_number << "/" << manager.job_total << ")\n";
-    //std::cout << "Job house: "<< current_house_num << '\n';
+
     setAlgorithmData(job_number);
     MySimulator simulator(manager.house_vector[current_house_num]);
-    //std::cout << "Algo pnt in runJob: " << current_algo_pnt << " - for job " << job_number << '\n';
     simulator.setAlgorithm(std::move(current_algo_pnt));
+
+    manager.startJobTimer(job_number, index);
+
     simulator.run();
-    if (!manager.summary_only) 
-        simulator.output(current_algo_name);
+
+    manager.timerJobTimerLock(job_number);
+    if (!manager.isJobTimerFinished(job_number))
+        manager.finishJobTimer(job_number);
+        is_elapsed = false; // got here before timer check
+    manager.timerJobTimerUnlock(job_number);
+
+    if (!is_elapsed) {
+        std::cout << index  << " thread is done with job #"<< job_number << std::endl;
+        if (!manager.summary_only) 
+            simulator.output(current_algo_name);
+        manager.setScoreboardJobScore(job_number, simulator.calculateScore());
+        return true;
+    }
+    else {
+        std::cout << index  << " thread gave up on job #"<< job_number << std::endl;
+        //! print to .error
+    }
+    return false;
 };
 
 void SimulatorManager::SimulatorThread::run() {
@@ -39,7 +60,8 @@ void SimulatorManager::SimulatorThread::run() {
         }
         manager.job_mutex.unlock();
         if (check) {
-            runJob(current_job);
+            check = runJob(current_job);
         }
     }
+    //manager.setThreadFinished(index);
 }

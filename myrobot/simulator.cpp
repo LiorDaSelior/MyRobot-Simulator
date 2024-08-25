@@ -23,7 +23,7 @@ void MySimulator::setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algor
 
 void MySimulator::run() {
     printf("SIMULATION START\n");
-    Step curr_step;
+    Step curr_step = static_cast<Step>(0);
     simulator_data.reset();
     while (step_count <= simulator_data.getMaxMissionSteps() && (!is_finished) && !(curr_step == Step::Finish && simulator_data.isVacuumAtDocking())) {
         curr_step = (*algorithm).nextStep();
@@ -60,45 +60,11 @@ void MySimulator::output(const std::string& algorithm_name) {
         return;
     }
 
-    std::string status;
-    if (simulator_data.batteryMeterQuery() <= 0) {
-        if (simulator_data.isVacuumAtDocking()) {
-            if (is_finished)
-                status = "FINISHED";
-            else
-                status = "WORKING";
-        }
-        else {
-            status = "DEAD";
-        }
-    }
-    else {
-        if (is_finished)
-            status = "FINISHED";
-        else
-            status = "WORKING";
-    }
-
-    std::string at_dock;
-    if (simulator_data.isVacuumAtDocking())
-        at_dock = "TRUE";
-    else
-        at_dock = "FALSE";
-
-    int score = simulator_data.getTotalDirt() * 300;
-    if (status == "DEAD")
-        score += simulator_data.getMaxMissionSteps() + 2000;
-    else if (status == "FINISHED" && !simulator_data.isVacuumAtDocking())
-        score += simulator_data.getMaxMissionSteps() + 3000;
-    else
-        score += step_count + (simulator_data.isVacuumAtDocking() ? 0 : 1000);
-    
-
     output_file << "NumSteps = " << step_count << std::endl;
     output_file << "DirtLeft = "<< simulator_data.getTotalDirt() << std::endl;
-    output_file << "Status = "<< status << std::endl;
-    output_file << "InDock = "<< at_dock << std::endl;
-    output_file << "Score = "<< score << std::endl;
+    output_file << "Status = "<< getStatus() << std::endl;
+    output_file << "InDock = "<< (simulator_data.isVacuumAtDocking()? "TRUE" : "FALSE") << std::endl;
+    output_file << "Score = "<< calculateScore() << std::endl;
     output_file << "Steps:" << std::endl;
     for (auto &&temp_step : step_list)
     {
@@ -126,4 +92,38 @@ void MySimulator::output(const std::string& algorithm_name) {
     }
     output_file.flush();
     output_file.close();
+}
+
+int MySimulator::calculateScore() {
+    std::string status = getStatus();
+    int score = simulator_data.getTotalDirt() * 300;
+    if (status == "DEAD")
+        score += simulator_data.getMaxMissionSteps() + 2000;
+    else if (status == "FINISHED" && !simulator_data.isVacuumAtDocking())
+        score += simulator_data.getMaxMissionSteps() + 3000;
+    else
+        score += step_count + (simulator_data.isVacuumAtDocking() ? 0 : 1000);
+    return score;
+}
+
+std::string MySimulator::getStatus() {
+    std::string status;
+    if (simulator_data.batteryMeterQuery() <= 0) {
+        if (simulator_data.isVacuumAtDocking()) {
+            if (is_finished)
+                status = "FINISHED";
+            else
+                status = "WORKING";
+        }
+        else {
+            status = "DEAD";
+        }
+    }
+    else {
+        if (is_finished)
+            status = "FINISHED";
+        else
+            status = "WORKING";
+    }
+    return status;
 }
