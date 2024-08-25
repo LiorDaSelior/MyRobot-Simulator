@@ -26,7 +26,13 @@ void MySimulator::run() {
     Step curr_step = static_cast<Step>(0);
     simulator_data.reset();
     while (step_count <= simulator_data.getMaxMissionSteps() && (!is_finished) && !(curr_step == Step::Finish && simulator_data.isVacuumAtDocking())) {
+        
+        if (!stop) {
         curr_step = (*algorithm).nextStep();
+        }
+        else {
+            break;
+        }
 
         if (step_count == simulator_data.getMaxMissionSteps()) { // forum - there can be "max_steps + 1" if the last one is finish
             if (curr_step == Step::Finish) {

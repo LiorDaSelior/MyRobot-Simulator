@@ -7,5 +7,6 @@ int main(int argc, char const *argv[])
 {
     SimulatorManager sim_manager = SimulatorManager(argc, argv);
     sim_manager.run();
+    printf("After run in main\n");
     sim_manager.close();
 }

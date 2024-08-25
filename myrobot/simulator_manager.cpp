@@ -54,10 +54,10 @@ void SimulatorManager::run() {
 
     for (int i = 0; i < threads_num; i++)
     {
-        threads.emplace_back(([this, i] () {
-            SimulatorThread sim_thread = SimulatorThread(*this, i);
+        threads.emplace_back(([this] (int index) {
+            SimulatorThread sim_thread = SimulatorThread(*this, index);
             sim_thread.run();
-            })
+            }), i
         );
     }
     
@@ -67,14 +67,17 @@ void SimulatorManager::run() {
         std::cout << i  << ": "<< is_thread_stuck_vector[i] << std::endl;
     }
 
+    printf("Before join\n");
     for (int i = 0; i < threads.size(); i++)
     {
         if ((!is_thread_stuck_vector[i]) && threads[i].joinable()) {
             threads[i].join();
         }
     }
+    printf("After join\n");
 
     outputCSV();
+    printf("After CSV\n");
 }
 
 void SimulatorManager::close() {
@@ -177,6 +180,7 @@ void SimulatorManager::manageJobs() {
                 printf("elapsed!\n");
                 printf("elapsed on job %d\n", i);
                 printf("thread #%d\n", timer_dict[i].getWorkerIndex());
+                
                 is_thread_stuck_vector[timer_dict[i].getWorkerIndex()] = true; // set thread to stuck
 
                 current_score = house_vector[job_number % house_vector.size()].getMaxMissionSteps() * 2 + 

@@ -30,6 +30,9 @@ public:
     int getInitDirt() {
         return simulator_data.getInitTotalDirt();
     }
+    void stopSimulator() {
+        stop = true;
+    }
 
 private:
     std::string filename;
@@ -41,6 +44,7 @@ private:
     size_t step_count = 0;
     std::list<Step> step_list;
     bool is_finished = false;
+    bool stop = false;
     // TODO:
     // count and return score in run
     // optional output

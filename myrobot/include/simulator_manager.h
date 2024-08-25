@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <thread>
 #include <chrono>
+#include <map>
 
 class SimulatorManager {
 public:
@@ -54,7 +55,7 @@ private:
         std::chrono::time_point<std::chrono::steady_clock> getStartTime() {return start_time;}
         bool isStarted() {return is_started;}
         bool isFinished() {return is_finished;}
-        bool getWorkerIndex() {return worker;}
+        int getWorkerIndex() {return worker;}
         int getTotalTime() {return job_total_time;}
         void timerLock() {timer_mutex.lock();}
         void timerUnlock() {timer_mutex.unlock();}
@@ -74,7 +75,7 @@ private:
     std::vector<int> scoreboard;
     std::vector<std::jthread> threads;
     std::vector<bool> is_thread_stuck_vector; //!
-    std::unordered_map<int, SimulatorJobTimer> timer_dict;
+    std::map<int, SimulatorJobTimer> timer_dict;
 
     //access_lock
     void handleArguments(int argc, char const *argv[]);
@@ -92,7 +93,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> getJobTimerStartTime(int i) {return timer_dict[i].getStartTime();}
     bool isJobTimerStarted(int i) {return timer_dict[i].isStarted();}
     bool isJobTimerFinished(int i) {return timer_dict[i].isFinished();}
-    bool getJobTimerWorkerIndex(int i) {return timer_dict[i].getWorkerIndex();}
+    int getJobTimerWorkerIndex(int i) {return timer_dict[i].getWorkerIndex();}
     int getJobTimerTotalTime(int i) {return timer_dict[i].getTotalTime();}
     void timerJobTimerLock(int i) {timer_dict[i].timerLock();}
     void timerJobTimerUnlock(int i) {timer_dict[i].timerUnlock();}

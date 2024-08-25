@@ -15,7 +15,7 @@ void SimulatorManager::SimulatorThread::setAlgorithmData(int job_number) {
 
 bool SimulatorManager::SimulatorThread::runJob(int job_number) { 
     //auto& current_timer = manager.getJobTimer(job_number);
-    bool is_elapsed = true;
+    bool is_elapsed = false;
 
     int current_house_num = job_number % manager.house_vector.size();
 
@@ -28,9 +28,10 @@ bool SimulatorManager::SimulatorThread::runJob(int job_number) {
     simulator.run();
 
     manager.timerJobTimerLock(job_number);
-    if (!manager.isJobTimerFinished(job_number))
+    if (!manager.isJobTimerFinished(job_number)) {
         manager.finishJobTimer(job_number);
         is_elapsed = false; // got here before timer check
+    }
     manager.timerJobTimerUnlock(job_number);
 
     if (!is_elapsed) {
@@ -60,6 +61,7 @@ void SimulatorManager::SimulatorThread::run() {
         }
         manager.job_mutex.unlock();
         if (check) {
+            std::cout << index  << " thread picked up job #"<< current_job << std::endl;
             check = runJob(current_job);
         }
     }
