@@ -74,15 +74,12 @@ bool SimulatorData::applyStep(Step s) { // false => step is useless, something i
     }
 }
 
-bool SimulatorData::charge() { //TODO how to raise battery
+bool SimulatorData::charge() {
     if (vacuum_cleaner_battery >= vacuum_cleaner_max_battery) {
         return false;
     }
-    //std::cout << "decided to charge: " << std::fixed << current_charge << "\n";
-    //std::cout << "prev battery: " <<  std::fixed << vacuum_cleaner_battery  << "\n";
     vacuum_cleaner_battery += current_charge;
     vacuum_cleaner_battery = std::min(vacuum_cleaner_battery, vacuum_cleaner_max_battery);
-    //std::cout << "new battery: " << std::fixed << vacuum_cleaner_battery  << "\n";
     return true;
 }
 
@@ -94,8 +91,6 @@ void SimulatorData::moveVacuum(Direction d) {
         y >= 0 && y < static_cast<int>(house.houseMap[0].size()) &&
         !house.isWall(x,y))
         vacuum_cleaner_coor = temp_coor;
-    //std::cout << "doc loc: (" << house.getDockingStation().first << "," << house.getDockingStation().second << ")\n";
-    //std::cout << "current vac loc: (" << vacuum_cleaner_coor.first << "," << vacuum_cleaner_coor.second << ")\n";
 }
 
 std::pair<int, int> SimulatorData::getAdvancedCoorByDirectionInHouse(std::pair<int, int> coor, Direction dir) {

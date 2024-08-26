@@ -6,15 +6,17 @@
 #include <cstdlib>
 #include <cctype>
 #include <map>
-
+#include <custom_exception.h>
 
 House::House(const std::string& filename) {
+    house_filename = "unknown";
     try {
         parseInputFile(filename);
-        //std::cout << "Completed parseInputFile without errors." << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Error in House constructor: " << e.what() << std::endl;
+    } catch (SimulatorException& e) {
         throw;
+    }
+    catch (const std::exception& e) {
+        throw HouseFailedToParseFile(house_filename, filename);
     }
     total_dirt = getTotalRemainingDirt();
 }
@@ -101,7 +103,7 @@ void House::parseInputFile(const std::string& filename) {
 
     std::ifstream file(filename);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open input file.");
+        throw HouseFailedToOpenFile(house_filename, filename);
     }
     std::string line;
     std::map<std::string, int> values;
@@ -113,9 +115,6 @@ void House::parseInputFile(const std::string& filename) {
         if (firstLine) {
             // First line is the file name
             file_name = line;
-            //std::cout << "File name: " << file_name << std::endl;
-            firstLine = false;
-            continue;
         }
 
         if (!readingGrid) {
@@ -124,10 +123,9 @@ void House::parseInputFile(const std::string& filename) {
                 std::string variableName = trim(line.substr(0, pos));
                 int value = std::stoi(trim(line.substr(pos + 1)));
                 values[variableName] = value;
-                //std::cout << variableName << " = " << value << std::endl;
             } else {
-                // Start reading the grid
-                readingGrid = true;
+                if (!firstLine)
+                    readingGrid = true;
             }
         }
 
@@ -135,72 +133,55 @@ void House::parseInputFile(const std::string& filename) {
             //need to check if the current house rows < given rows
             grid.push_back(line);
         }
+
+        if (firstLine)
+            firstLine = false;
     }
 
     if (grid.empty()) {
-
-        throw std::runtime_error("No house found.");
-
+        throw HouseInvalidDockingStationAmountInFile(house_filename, filename, "0");
     } 
 
     //we can brake on the while loop the moment we reach the house, and initialize the grid with rows and cols immediately
     file.close();
-    //std::cout << "printing current house" << std::endl;
-    //std::cout << "grid.size : " << grid.size() << std::endl;
-    //std::cout << "grid.size[0] : " << grid[0].size() << std::endl;
-
-    for(long unsigned int i=0; i<grid.size(); i++){
-        for(long unsigned int j=0; j<grid[i].size(); j++){
-            //std::cout << grid[i][j];
-        }
-        //std::cout << std::endl;
-    }
 
     // Set the extracted values to class members
     if (values.find("MaxSteps") != values.end()) {
         maxMissionSteps = values["MaxSteps"];
     } else {
-        throw std::runtime_error("Invalid house file: MaxSteps missing.");
+        throw HouseMissingAttributeInFile(house_filename, filename, "MaxSteps");
     }
     if (values.find("MaxBattery") != values.end()) {
         maxBatterySteps = values["MaxBattery"];
     } else {
-        throw std::runtime_error("Invalid house file: MaxBattery missing.");
+        throw HouseMissingAttributeInFile(house_filename, filename, "MaxBattery");
     }
     if (values.find("Rows") != values.end()) {
         rows = values["Rows"];
     } else {
-        throw std::runtime_error("Invalid house file: Rows missing.");
+        throw HouseMissingAttributeInFile(house_filename, filename, "Rows");
     }
     if (values.find("Cols") != values.end()) {
         cols = values["Cols"];
     } else {
-        throw std::runtime_error("Invalid house file: Cols missing.");
+        throw HouseMissingAttributeInFile(house_filename, filename, "Cols");
     }
 
     new_grid.assign(rows, std::string(cols, ' '));
-
-    //std::cout << "updated the house to the given rows/cols" << std::endl;
-    //std::cout << "new_grid.size : " << new_grid.size() << std::endl;
-    //std::cout << "new_grid.size[0] : " << new_grid[0].size() << std::endl;
 
     for(long unsigned int i=0; i<new_grid.size(); i++){
         for(long unsigned int j=0; j<new_grid[i].size(); j++){
             if(i<grid.size() && j < grid[i].size()){
                 new_grid[i][j] = grid[i][j];
-                //std::cout << new_grid[i][j];
             }
             else{
                 new_grid[i][j] = ' ';
-                //std::cout << new_grid[i][j];
             }
         }
-        //std::cout << std::endl;
     }
     surroundWithWalls();
     // Initialize houseMap with zeros (without additional rows and columns for walls)
     houseMap.assign(rows, std::vector<int>(cols, 0));
-    //std::cout << "Initialized houseMap with size " << rows << "x" << cols << std::endl;
 
     // Process the grid lines into the houseMap
     int num_of_dockstation = 0;
@@ -221,24 +202,14 @@ void House::parseInputFile(const std::string& filename) {
         }
     }
     if (num_of_dockstation != 1) {
-        throw std::runtime_error("Invalid house file: Multiple or no docking stations found.");
+        throw HouseInvalidDockingStationAmountInFile(house_filename, filename, std::to_string(num_of_dockstation));
     }
 
-    // Print houseMap for debugging
-    //std::cout << "Parsed houseMap:" << std::endl;
-    for (size_t i = 0; i < houseMap.size(); ++i) {
-        //std::cout << "Row " << i << ": ";
-        for (size_t j = 0; j < houseMap[i].size(); ++j) {
-            //std::cout << houseMap[i][j] << " ";
-        }
-        //std::cout << std::endl;
-    }
-    //std::cout << "docking station = " << dockingStation.first << ", " << dockingStation.second << std::endl;
-    //std::cout << "Exiting parseInputFile." << std::endl;
 }
 void House::surroundWithWalls(){
-    //std::cout << "surroundWalls" << std::endl;
-    //std::cout << std::endl;
+    if (rows+cols<=1) {
+        return;
+    }
 
     std::string first_row;
     first_row.assign(new_grid[0].size(), 'W');
@@ -255,13 +226,4 @@ void House::surroundWithWalls(){
     for (auto& row : new_grid) {
         row.push_back('W');
     }
-
-    // Debugging statements to verify correct wall placement
-    //std::cout << "After adding walls:" << std::endl;
-    // for(long unsigned int i=0; i<new_grid.size(); i++){
-    //     for(long unsigned int j=0; j<new_grid[i].size(); j++){
-    //         std::cout << new_grid[i][j];
-    //     }
-    //     std::cout << std::endl;
-    // }
 }

@@ -39,7 +39,7 @@ std::pair<int, int> getAdvancedCoorByDirection(std::pair<int, int> coor, Directi
     return std::pair<int, int>(coor.first + i, coor.second + j);
 }
 
-void Algo_319125134::visitCurrentLocation() {
+void Algo_204666085::visitCurrentLocation() {
     if (isCurrentLocationVisited())
         return;
 
@@ -60,30 +60,34 @@ void Algo_319125134::visitCurrentLocation() {
     }
 }
 
-bool Algo_319125134::checkCurrentLocationDirt() {
+bool Algo_204666085::checkCurrentLocationDirt() {
     if ((dirt_sensor_ptr -> dirtLevel()) > 0)
         return true;
     house_map.removeCoorDirt(curr_coor);
     return false;
 }
 
-Step Algo_319125134::moveToClosestDirtyLocation() {
+Step Algo_204666085::moveToClosestDirtyLocation() {
     std::pair<int, int> dst_coor;
     dst_coor = house_map.getClosestDirty(curr_coor);
+    if (house_map.getDistance(std::pair<int, int>(0,0)) == 0 && battery_meter_ptr->getBatteryState() < house_map.getDistance(dst_coor) * 2) 
+        return Step::Stay;
     if (dst_coor != curr_coor)
         return (Step)house_map.getDirection(curr_coor, dst_coor);
     return Step::Stay;
 }
 
-Step Algo_319125134::moveToClosestUnvisitedLocation() {
+Step Algo_204666085::moveToClosestUnvisitedLocation() {
     std::pair<int, int> dst_coor;
     dst_coor = house_map.getClosestUnvisited(curr_coor);
+    if (house_map.getDistance(std::pair<int, int>(0,0)) == 0 && battery_meter_ptr->getBatteryState() < house_map.getDistance(dst_coor) * 2) 
+        return Step::Stay;
     if (dst_coor != curr_coor)
         return (Step)house_map.getDirection(curr_coor, dst_coor);
     return Step::Stay;
 }
 
-bool Algo_319125134::checkIfNeedToReturn(Step planned_step) {
+bool Algo_204666085::checkIfNeedToReturn(Step planned_step) {
     if (planned_step == Step::Finish) {
         return true;
     }
@@ -100,7 +104,7 @@ bool Algo_319125134::checkIfNeedToReturn(Step planned_step) {
     return false;
 }
 
-Step Algo_319125134::nextStep() {
+Step Algo_204666085::nextStep() {
     Step next_step;
     Step temp_step;
     bool decided = false;
@@ -163,5 +167,5 @@ Step Algo_319125134::nextStep() {
 }
 
 extern "C" {
-    REGISTER_ALGORITHM(Algo_319125134);
+    REGISTER_ALGORITHM(Algo_204666085);
 }

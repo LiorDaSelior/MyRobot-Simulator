@@ -10,6 +10,7 @@
 #include "wall_sensor.h"
 #include "simulator_data.h"
 #include <memory>
+#include <thread>
 
 
 class MySimulator {
@@ -18,6 +19,8 @@ public:
     ~MySimulator() = default;
     MySimulator(const MySimulator& other) = delete; // using unique pointers
     MySimulator& operator=(const MySimulator&) = delete;
+    MySimulator(MySimulator&&) noexcept = default;
+    MySimulator& operator=(MySimulator&&) noexcept = default;
 
     MySimulator(House& house);
     void setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algorithm_pnt);
@@ -30,9 +33,7 @@ public:
     int getInitDirt() {
         return simulator_data.getInitTotalDirt();
     }
-    void stopSimulator() {
-        stop = true;
-    }
+
 
 private:
     std::string filename;
@@ -44,10 +45,6 @@ private:
     size_t step_count = 0;
     std::list<Step> step_list;
     bool is_finished = false;
-    bool stop = false;
-    // TODO:
-    // count and return score in run
-    // optional output
 
     std::string getStatus();
 };

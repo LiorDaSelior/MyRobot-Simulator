@@ -1,15 +1,8 @@
-project(myrobot VERSION 0.1.0 LANGUAGES C CXX)
+project(myrobot VERSION 1.0.0 LANGUAGES C CXX)
 
-cmake_policy(SET CMP0167 NEW)
-
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/exe)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -pthread -Wall -Wextra -Werror -pedantic")
 
-find_package(Boost REQUIRED COMPONENTS system)
-include_directories(${Boost_INCLUDE_DIRS})
-#include_directories(include)
-
-#add_library(simulator_library INTERFACE) #INTERFACE - only header files
 add_library(simulator_library house.cpp simulator.cpp simulator_data.cpp my_battery_meter.cpp my_wall_sensor.cpp my_dirt_sensor.cpp simulator_manager.cpp simulator_thread.cpp)
 target_include_directories(simulator_library PUBLIC ${PROJECT_SOURCE_DIR}/include ${COMMON_DIR})
 
@@ -24,5 +17,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${COMMON_DIR})
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC 
     simulator_library
-    ${Boost_LIBRARIES}
 )

@@ -4,28 +4,46 @@
 #include <dlfcn.h>
 #include <chrono>
 
-constexpr int TIME_QUANTUM = 1; // ms
+
+constexpr int TIME_QUANTUM = 3; // ms
 
 SimulatorManager::SimulatorManager(int argc, char const *argv[]) {
     handleArguments(argc, argv);
 
     for (const auto & dirent : std::filesystem::directory_iterator(algo_path)) {
+        int current_size;
         if (dirent.path().extension() == ".so") {
-            void* handle = dlopen(dirent.path().c_str(), RTLD_LAZY);
-            if (handle == nullptr) {
-                std::cerr << "Error loading library: " << dlerror() << std::endl;
+            current_size = AlgorithmRegistrar::getAlgorithmRegistrar().count(); 
+            try {
+                void* handle = dlopen(dirent.path().c_str(), RTLD_LAZY);
+                if (handle == nullptr) {
+                    throw AlgorithmFailedRegistration(dirent.path().stem().string(),dirent.path().string());
+                }
+                else {
+                    if (current_size == static_cast<int>(AlgorithmRegistrar::getAlgorithmRegistrar().count())) {
+                        throw AlgorithmFailedRegistration(dirent.path().stem().string(),dirent.path().string());
+                    }
+                    else {
+                    handle_vector.push_back(handle);  
+                    }  
+                }
             }
-            else
-                handle_vector.push_back(handle);
+            catch (AlgorithmFailedRegistration& e) {
+                handleSimulatorException(e);
+            }
         }
     }
 
     for (const auto & dirent : std::filesystem::directory_iterator(house_path)) {
         if (dirent.path().extension() == ".house") {
-            house_vector.emplace_back(dirent.path().string()); //TODO add error handling
+            try {
+            house_vector.emplace_back(dirent.path().string());
+            }
+            catch (SimulatorException& e) {
+                handleSimulatorException(e);
+            }
         }
     }
-
     job_total = AlgorithmRegistrar::getAlgorithmRegistrar().count() * house_vector.size();
     algo_pnt_vector = std::vector<std::unique_ptr<AbstractAlgorithm>>(job_total);
     algo_name_vector = std::vector<std::string>(AlgorithmRegistrar::getAlgorithmRegistrar().count());
@@ -49,7 +67,7 @@ SimulatorManager::SimulatorManager(int argc, char const *argv[]) {
     is_thread_stuck_vector = std::vector<bool>(threads_num, false);
 }
 
-void SimulatorManager::run() {
+bool SimulatorManager::run() {
     job_number = 0;
 
     for (int i = 0; i < threads_num; i++)
@@ -60,24 +78,26 @@ void SimulatorManager::run() {
             }), i
         );
     }
-    
+
     manageJobs();
 
-    for (int i = 0; i < is_thread_stuck_vector.size(); i++) {
-        std::cout << i  << ": "<< is_thread_stuck_vector[i] << std::endl;
-    }
-
-    printf("Before join\n");
-    for (int i = 0; i < threads.size(); i++)
+    for (size_t i = 0; i < threads.size(); i++)
     {
         if ((!is_thread_stuck_vector[i]) && threads[i].joinable()) {
             threads[i].join();
         }
     }
-    printf("After join\n");
 
     outputCSV();
-    printf("After CSV\n");
+
+    for (size_t i = 0; i < threads.size(); i++)
+    {
+        if (is_thread_stuck_vector[i] && threads[i].joinable()) {
+            threads[i].join();
+        }
+    }
+
+    return true;
 }
 
 void SimulatorManager::close() {
@@ -85,6 +105,7 @@ void SimulatorManager::close() {
     for (auto& handle : handle_vector) {
         dlclose(handle);
     }
+    handle_vector.clear();
 }
 
 void SimulatorManager::handleArguments(int argc, char const *argv[]) {
@@ -119,7 +140,7 @@ void SimulatorManager::handleArguments(int argc, char const *argv[]) {
 
     house_path = parameters["-house_path"];
     algo_path = parameters["-algo_path"];
-    threads_num = std::stoi(parameters["-num_threads"]); //TODO error handle
+    threads_num = std::stoi(parameters["-num_threads"]);
 }
 
 void SimulatorManager::outputCSV() {
@@ -133,22 +154,23 @@ void SimulatorManager::outputCSV() {
 
     output_file << "algorithms/houses";
 
-    for (int i = 0; i < house_vector.size(); i++)
+    for (size_t i = 0; i < house_vector.size(); i++)
     {
         output_file << ",";
         output_file << house_vector[i].getHouseFilename();     
     }
     output_file << std::endl;
-    for (int i = 0; i < algo_name_vector.size(); i++)
+    for (size_t i = 0; i < algo_name_vector.size(); i++)
     {
         output_file << algo_name_vector[i];
-        for (int j = 0; j < house_vector.size(); j++)
+        for (size_t j = 0; j < house_vector.size(); j++)
         {
             output_file << ",";
             output_file << scoreboard[i * house_vector.size() + j];
         }
         output_file << std::endl;
     }
+    output_file.close();
 }
 
 void SimulatorManager::manageJobs() {
@@ -177,15 +199,14 @@ void SimulatorManager::manageJobs() {
             }
             timer_dict[i].timerUnlock();
             if (is_elapsed) {
-                printf("elapsed!\n");
-                printf("elapsed on job %d\n", i);
-                printf("thread #%d\n", timer_dict[i].getWorkerIndex());
-                
                 is_thread_stuck_vector[timer_dict[i].getWorkerIndex()] = true; // set thread to stuck
 
-                current_score = house_vector[job_number % house_vector.size()].getMaxMissionSteps() * 2 + 
-                house_vector[job_number % house_vector.size()].getTotalDirt() * 300 + 2000;
+                current_score = house_vector[i % house_vector.size()].getMaxMissionSteps() * 2 + 
+                house_vector[i % house_vector.size()].getTotalDirt() * 300 + 2000;
                 setScoreboardJobScore(i, current_score); // set scoreboard for failed job
+
+                std::string error_msg = "Timeout occurred when running simulation on house \"" + house_vector[i % house_vector.size()].getHouseFilename() + "\". Recording timeout score in summary.csv";
+                outputSimulatorError(algo_name_vector[static_cast<int>(i / house_vector.size())], error_msg);
 
                 is_thread_stuck_vector.push_back(false); // add new thread
                 threads.emplace_back(([this] () { 
@@ -193,7 +214,21 @@ void SimulatorManager::manageJobs() {
                 sim_thread.run();
                 }));
             }
-            //(!timer_dict[i].isFinished()) ? (std::cout << i << std::endl) : (std::cout);
         }
     }
+}
+
+void SimulatorManager::handleSimulatorException(SimulatorException& e) {
+    outputSimulatorError(e.getFilename(), e.getMessage());
+}
+
+void SimulatorManager::outputSimulatorError(std::string filename, std::string error_msg) {
+    std::string error_filename = filename + ".error";
+    std::ofstream error_file = std::ofstream(error_filename, std::ios::app);
+    if (!error_file) {
+        std::cerr << "Error opening file: " << error_filename << std::endl;
+        return;
+    }
+    error_file << error_msg << std::endl;
+    error_file.close();
 }

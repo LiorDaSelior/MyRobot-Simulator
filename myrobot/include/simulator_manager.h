@@ -6,12 +6,13 @@
 #include <condition_variable>
 #include <thread>
 #include <chrono>
-#include <map>
+#include <unordered_map>
+#include <custom_exception.h>
 
 class SimulatorManager {
 public:
     SimulatorManager(int argc, char const *argv[]);
-    void run();
+    bool run();
     void close();
 
 private:
@@ -74,10 +75,12 @@ private:
     std::mutex job_mutex;
     std::vector<int> scoreboard;
     std::vector<std::jthread> threads;
-    std::vector<bool> is_thread_stuck_vector; //!
-    std::map<int, SimulatorJobTimer> timer_dict;
+    std::vector<bool> is_thread_stuck_vector;
+    std::unordered_map<int, SimulatorJobTimer> timer_dict;
+    int total_time = 0;
 
-    //access_lock
+    void handleSimulatorException(SimulatorException& e);
+    void outputSimulatorError(std::string filename, std::string error_msg);
     void handleArguments(int argc, char const *argv[]);
     void setScoreboardJobScore(int job_number, int score) {
         scoreboard[job_number] = score;

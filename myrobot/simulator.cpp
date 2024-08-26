@@ -22,17 +22,12 @@ void MySimulator::setAlgorithm(std::unique_ptr<AbstractAlgorithm> abstract_algor
 }
 
 void MySimulator::run() {
-    printf("SIMULATION START\n");
     Step curr_step = static_cast<Step>(0);
     simulator_data.reset();
     while (step_count <= simulator_data.getMaxMissionSteps() && (!is_finished) && !(curr_step == Step::Finish && simulator_data.isVacuumAtDocking())) {
         
-        if (!stop) {
         curr_step = (*algorithm).nextStep();
-        }
-        else {
-            break;
-        }
+        
 
         if (step_count == simulator_data.getMaxMissionSteps()) { // forum - there can be "max_steps + 1" if the last one is finish
             if (curr_step == Step::Finish) {
@@ -44,14 +39,12 @@ void MySimulator::run() {
 
         step_list.push_back(curr_step);
         if (!simulator_data.applyStep(curr_step)) {
-            //printf("WARNING: STEP DOES NOTHING\n");
         }
         if (curr_step != Step::Finish)
             step_count++;
         else
             is_finished = true;
     }
-    printf("SIMULATION END\n");
 }
 
 void MySimulator::output(const std::string& algorithm_name) {
